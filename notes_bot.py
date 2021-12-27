@@ -1,4 +1,6 @@
 import logging
+import requests
+import json
 
 from telegram import Update, ForceReply
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
@@ -17,21 +19,39 @@ def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
     update.message.reply_markdown_v2(
-        fr'Hola, {user.mention_markdown_v2()}, soy un bot creado específicamente para fastidiarte\!')
+        fr'Hola, {user.mention_markdown_v2()}, soy un bot creado para enviar tus mensajes a una base de datos\!')
 
 
 def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
-    update.message.reply_text("Por qué necesitas ayuda? Soy muy fastidioso?")
+    update.message.reply_text("Aún no tengo una página de ayuda. Seguimos trabajando para usted.")
 
 
-def echo(update: Update, context: CallbackContext) -> None:
-    """Echo the user message."""
+def store(update: Update, context: CallbackContext) -> None:
+    """Store the user message."""
     message = update.message.text
-    if message != "Luisa":
-        update.message.reply_text('Lo que dijiste fue: ' + message)
-    else:
-        update.message.reply_text('Mi creador te ama')
+    url = "https://3001-apricot-scorpion-ulosbcd8.ws-us25.gitpod.io/api/message"
+
+    payload = json.dumps({
+        "message": message
+        })
+    headers = {
+        'Content-Type': 'application/json'
+        }
+    response = requests.request("POST", url, headers=headers, data=payload)
+    ## Respuesta del bot:
+    update.message.reply_text("Almacené tu mensaje: " + message + ". En la API")
+
+def all_messages(update: Update, context: CallbackContext) -> None:
+    """Show all messages to the user message."""
+    url = "https://3001-apricot-scorpion-ulosbcd8.ws-us25.gitpod.io/api/message"
+    payload={}
+    headers = {}
+    response = requests.request("GET", url, headers=headers, data=payload)
+    update.message.reply_text(response.text)
+
+
+    
 
 
 def main() -> None:
@@ -45,9 +65,10 @@ def main() -> None:
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("messages", all_messages))
 
     # on non command i.e message - echo the message on Telegram
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, store))
 
     # Start the Bot
     updater.start_polling()
