@@ -19,7 +19,7 @@ def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
     update.message.reply_markdown_v2(
-        fr'Hola, {user.mention_markdown_v2()}, soy un bot creado para enviar tus mensajes a una base de datos\!')
+        fr'Hola, {user.mention_markdown_v2()}, por favor, de entre estos emojis envía el que más represente tu estado de ánimo actual: 😃 , 😐 o 😞\!')
 
 
 def help_command(update: Update, context: CallbackContext) -> None:
@@ -28,19 +28,39 @@ def help_command(update: Update, context: CallbackContext) -> None:
 
 
 def store(update: Update, context: CallbackContext) -> None:
-    """Store the user message."""
-    message = update.message.text
-    url = "https://3001-apricot-scorpion-ulosbcd8.ws-us25.gitpod.io/api/message"
+    """Store the user emotion and comment."""
+    emotion = update.message.text
+    if emotion == "😃" or emotion == "😐" or emotion == "😞":
+        update.message.reply_text("Quieres agregar un comentario para explicar tu estado de ánimo?")
+        commentary = update.message.text
+        if commentary != None:
+            url = "https://3001-apricot-scorpion-ulosbcd8.ws-us25.gitpod.io/api/message"
 
-    payload = json.dumps({
-        "message": message
-        })
-    headers = {
-        'Content-Type': 'application/json'
-        }
-    response = requests.request("POST", url, headers=headers, data=payload)
-    ## Respuesta del bot:
-    update.message.reply_text("Almacené tu mensaje: " + message + ". En la API")
+            payload = json.dumps({
+                "emotion": emotion,
+                "message": commentary
+                })
+            headers = {
+                'Content-Type': 'application/json'
+                }
+            response = requests.request("POST", url, headers=headers, data=payload)
+            ## Respuesta del bot:
+            update.message.reply_text("Almacené tu emoji: " + emotion + " y tu comentario: " + commentary + " en la base de datos")
+        else:
+            url = "https://3001-apricot-scorpion-ulosbcd8.ws-us25.gitpod.io/api/message"
+
+            payload = json.dumps({
+                "emotion": emotion,
+                "message": ""
+                })
+            headers = {
+                'Content-Type': 'application/json'
+                }
+            response = requests.request("POST", url, headers=headers, data=payload)
+            ## Respuesta del bot:
+            update.message.reply_text("Almacené tu emoji: " + emotion + ". No diste comentarios adicionales.")
+    else:
+        update.message.reply_text("Tu mensaje no sirve para identificar tu estado de ánimo.")
 
 def all_messages(update: Update, context: CallbackContext) -> None:
     """Show all messages to the user message."""
@@ -50,10 +70,7 @@ def all_messages(update: Update, context: CallbackContext) -> None:
     response = requests.request("GET", url, headers=headers, data=payload)
     update.message.reply_text(response.text)
 
-
-    
-
-
+   
 def main() -> None:
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
